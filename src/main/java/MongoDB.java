@@ -21,6 +21,26 @@ public class MongoDB {
         credentials.add("V12");
         DBController.SwitchToDB("MongoDBTutorial");
         DBController.SwitchToCollection("Users");
-        DBController.PerformLogin(credentials);
+        try{
+            DBController.PerformLogin(credentials);
+        }
+        catch(Exception e){
+        }
+        System.out.println("User: " + DBController.boundUserMongoID);
+
+        ArrayList<String> args_2 = new ArrayList<>();
+        args_2.add("The title");
+        args_2.add("Food");
+        args_2.add("Meat");
+        args_2.add("2");
+        args_2.add("I bought some meat");
+        args_2.add("09/10/2020 12:10");
+        try{
+            DBController.PostExpense(args_2);
+        }
+        catch(Exception excp){
+
+        }
+
     }
 }

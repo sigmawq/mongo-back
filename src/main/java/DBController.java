@@ -5,6 +5,7 @@ import com.mongodb.client.MongoDatabase;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import com.mongodb.*;
@@ -18,10 +19,7 @@ import org.bson.Document;
 import java.net.UnknownHostException;
 
 public class DBController {
-    static ErrorCodes returnCode; // Return code here
-    static String lastError; // Error description goes here
-    static String boundUserMongoID = ""; // Bound user, if no user bound => this field should be ""
-    static String returnObject; // All request data should be returned here
+    static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
 
     public static MongoClient mongoClient;
     public static MongoDatabase database;
@@ -39,6 +37,34 @@ public class DBController {
     static void SwitchToCollection(String CollectionName){
         currentCollection = currentCollection = database.getCollection(CollectionName);
     }
+
+    // Check ian object with value "val" of key "key" exists in currentCollection
+    static boolean CheckIfExists(String key, String val){
+        Document query = new Document();
+        query.append(key, val);
+        FindIterable<Document> res = currentCollection.find(query);
+        if (res.cursor().hasNext()) return true;
+        return false;
+    }
+
+    static boolean CheckIfExists(String key, int val){
+        Document query = new Document();
+        query.append(key, val);
+        FindIterable<Document> res = currentCollection.find(query);
+        if (res.cursor().hasNext()) return true;
+        return false;
+    }
+
+    // Pick unique id for current collection.
+    static int PickID(){
+        for (int i = 0; i < 2147483647; i++){
+            if (!(CheckIfExists("_id", i))){
+                return i;
+            }
+        }
+        return -1;
+    }
+
     static RListForm_Input ProcessInput(String path) throws Exception{
         try{
             RListForm_Input result = new RListForm_Input();
@@ -62,45 +88,70 @@ public class DBController {
     }
 
     // RID 0:
-    static boolean PerformLogin(ArrayList<String> Args) {
+    static void PerformLogin(ArrayList<String> Args) throws Exception{
+        SwitchToCollection("Users");
         try{
-            if (boundUserMongoID != ""){
-                lastError = "Attempted to log in while already logged in";
-                returnCode = ErrorCodes.GENERIC_ERROR;
-                return false;
+            if (boundUserMongoID != -1){
+                throw new Exception("Attempted to log in while already logged in");
             }
             if (Args.size() < 2){
-                lastError = "Provided argument count is less than expected";
-                returnCode = ErrorCodes.WRONG_ARGUMENT_AMOUNT;
-                return false;
+                throw new Exception("Provided element count is less than expected");
             }
             BasicDBObject userToFind = new BasicDBObject();
-            userToFind.append("Username", Args.get(0));
-            userToFind.append("Password", Args.get(1));
+            userToFind.append("username", Args.get(0));
+            userToFind.append("password", Args.get(1));
             FindIterable<Document> qresult = currentCollection.find(userToFind);
             if (!(qresult.cursor().hasNext())){
-                lastError = "User not found";
-                returnCode = ErrorCodes.LOGIN_FAILED;
-                return false;
+                throw new Exception("User not found");
             }
-            boundUserMongoID = qresult.cursor().next().get("_id").toString();
-            return true;
+            boundUserMongoID = Integer.parseInt(qresult.cursor().next().get("_id").toString());
         }
         catch (Exception excp){
             System.out.println(excp.getCause());
-            return false;
         }
-
     }
 
     // RID: 9
     static void PerformLogOut(){
-        boundUserMongoID = "";
+        boundUserMongoID = -1;
     }
 
     // RID: 2
-    static int GetExpenceList(ArrayList<String> Args){
-        if (Args.size() < 3) return 1;
-        return 1;
+    static void GetExpenceList(ArrayList<String> Args) throws Exception{
+    }
+
+    // RID: 7
+    static int PostExpense(ArrayList<String> Args) throws Exception{
+        SwitchToCollection("Expenses");
+        if (Args.size() < 6){
+            throw new Exception("Wrong argument count");
+        }
+        try{
+            Document newExpense = new Document();
+            int pickedId = PickID();
+            if (pickedId == -1){
+                throw new Exception("No ID available");
+            }
+            newExpense.append("_id", pickedId);
+            newExpense.append("user_id", boundUserMongoID);
+            newExpense.append("category", Args.get(0));
+            newExpense.append("title", Args.get(1));
+            newExpense.append("name", Args.get(2));
+            newExpense.append("quantity", Args.get(3));
+            newExpense.append("description", Args.get(4));
+            newExpense.append("date", Args.get(5));
+            currentCollection.insertOne(newExpense);
+            return pickedId;
+
+        }
+        catch (Exception excp){
+            System.out.println(excp.getCause());
+            return -1;
+        }
+    }
+
+    // RID: 8
+    static int PostIncome(){
+        return -1;
     }
 }
