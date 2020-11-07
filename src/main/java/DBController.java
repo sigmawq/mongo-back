@@ -20,7 +20,7 @@ import java.net.UnknownHostException;
 public class DBController {
     static ErrorCodes returnCode; // Return code here
     static String lastError; // Error description goes here
-    static String boundUserMongoID; // Bound user, if no user bound => this field should be ""
+    static String boundUserMongoID = ""; // Bound user, if no user bound => this field should be ""
     static String returnObject; // All request data should be returned here
 
     public static MongoClient mongoClient;
@@ -37,13 +37,8 @@ public class DBController {
     }
 
     static void SwitchToCollection(String CollectionName){
-        currentCollection = currentCollection = database.getCollection("test");
+        currentCollection = currentCollection = database.getCollection(CollectionName);
     }
-
-    static Cursor SearchFor_In(Document queryDocument){
-        FindIterable queryResult = currentCollection.find(queryDocument);
-    }
-
     static RListForm_Input ProcessInput(String path) throws Exception{
         try{
             RListForm_Input result = new RListForm_Input();
@@ -68,28 +63,34 @@ public class DBController {
 
     // RID 0:
     static boolean PerformLogin(ArrayList<String> Args) {
-        if (boundUserMongoID != ""){
-            lastError = "Attempted to log in while already logged in";
-            returnCode = ErrorCodes.GENERIC_ERROR;
+        try{
+            if (boundUserMongoID != ""){
+                lastError = "Attempted to log in while already logged in";
+                returnCode = ErrorCodes.GENERIC_ERROR;
+                return false;
+            }
+            if (Args.size() < 2){
+                lastError = "Provided argument count is less than expected";
+                returnCode = ErrorCodes.WRONG_ARGUMENT_AMOUNT;
+                return false;
+            }
+            BasicDBObject userToFind = new BasicDBObject();
+            userToFind.append("Username", Args.get(0));
+            userToFind.append("Password", Args.get(1));
+            FindIterable<Document> qresult = currentCollection.find(userToFind);
+            if (!(qresult.cursor().hasNext())){
+                lastError = "User not found";
+                returnCode = ErrorCodes.LOGIN_FAILED;
+                return false;
+            }
+            boundUserMongoID = qresult.cursor().next().get("_id").toString();
+            return true;
+        }
+        catch (Exception excp){
+            System.out.println(excp.getCause());
             return false;
         }
-        if (Args.size() < 2){
-            lastError = "Provided argument count is less than expected";
-            returnCode = ErrorCodes.WRONG_ARGUMENT_AMOUNT;
-            return false;
-        }
-        BasicDBObject userToFind = new BasicDBObject();
-        userToFind.append("Username", Args.get(0));
-        userToFind.append("Password", Args.get(1));
-        FindIterable<Document> qresult = currentCollection.find(Filters.and(Filters.eq("Username", Args.get(0)),
-                                                                Filters.eq("Password", Args.get(1))));
-        if (!qresult.cursor().hasNext()){
-            lastError = "User not found";
-            returnCode = ErrorCodes.LOGIN_FAILED;
-            return false;
-        }
-        boundUserMongoID = qresult.cursor().next().get("ObjectId").toString();
-        return true;
+
     }
 
     // RID: 9
@@ -100,5 +101,6 @@ public class DBController {
     // RID: 2
     static int GetExpenceList(ArrayList<String> Args){
         if (Args.size() < 3) return 1;
+        return 1;
     }
 }
