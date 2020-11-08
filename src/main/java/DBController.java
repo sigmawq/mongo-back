@@ -9,8 +9,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap;
-import java.util.ArrayList;
+import java.util.*;
 
 import com.mongodb.*;
 import com.mongodb.client.FindIterable;
@@ -21,8 +20,6 @@ import com.mongodb.client.model.*;
 import org.bson.Document;
 
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class DBController {
     static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
@@ -30,6 +27,30 @@ public class DBController {
     public static MongoClient mongoClient;
     public static MongoDatabase database;
     public static MongoCollection currentCollection;
+    public static HashMap<Integer, String> RID2FunctionMap;
+
+    static String ProcessRequest(ArrayList<String> Args){
+        String respose = "";
+        try{
+            int RID = Integer.parseInt(Args.get(0));
+            Args.remove(0);
+            switch (RID){
+                case 0:
+                    respose = PerformLogin(Args);
+                    break;
+                case 1:
+                    respose = GetSumOfExpenses(Args);
+                    break;
+                default:
+                    throw new Exception("RID not found");
+            }
+            return respose;
+        }
+        catch (Exception excp){
+            System.out.println(excp.getCause());
+        }
+        return respose;
+    }
 
     static void ConnectToMongoDB(String URI){
         MongoClientURI mainClient = new MongoClientURI(URI);
@@ -42,6 +63,12 @@ public class DBController {
 
     static void SwitchToCollection(String CollectionName){
         currentCollection = currentCollection = database.getCollection(CollectionName);
+    }
+
+    static void CheckIfLogged() throws Exception{
+        if (boundUserMongoID == -1){
+            throw new Exception("Not logged in");
+        }
     }
 
     // Check ian object with value "val" of key "key" exists in currentCollection
@@ -71,37 +98,8 @@ public class DBController {
         return -1;
     }
 
-    static RListForm_Input ProcessInput(String path) throws Exception{
-        try{
-            RListForm_Input result = new RListForm_Input();
-            BufferedReader inputFile = new BufferedReader(new FileReader(path));
-            String RID = inputFile.readLine();
-            String[] argList;
-            String currentArg = new String();
-            while (currentArg != null){
-                currentArg = inputFile.readLine();
-                result.args.add(currentArg);
-            }
-            return result;
-        }
-        catch (Exception excp){
-            System.out.println("bla bla");
-            throw new Exception();
-        }
-    }
-    static RListForm_Output ProcessOutput(String data) {
-        return new RListForm_Output();
-    }
-
-    static void CheckIfLogged() throws Exception{
-        if (boundUserMongoID != -1){
-            return;
-        }
-        throw new Exception("Not logged in");
-    }
-
     // RID 0:
-    static void PerformLogin(ArrayList<String> Args) throws Exception{
+    static String PerformLogin(ArrayList<String> Args) throws Exception{
         SwitchToCollection("Users");
         try{
             if (boundUserMongoID != -1){
@@ -115,13 +113,15 @@ public class DBController {
             userToFind.append("password", Args.get(1));
             FindIterable<Document> qresult = currentCollection.find(userToFind);
             if (!(qresult.cursor().hasNext())){
-                throw new Exception("User not found");
+                return "0";
             }
             boundUserMongoID = Integer.parseInt(qresult.cursor().next().get("_id").toString());
+            return "1";
         }
         catch (Exception excp){
             System.out.println(excp.getCause());
         }
+        return "";
     }
 
     // RID: 9
@@ -130,7 +130,7 @@ public class DBController {
     }
 
     // RID: 2
-    static String GetExpenceList(ArrayList<String> Args) throws Exception{
+    static String GetSumOfExpenses(ArrayList<String> Args) throws Exception{
         CheckIfLogged();
         SwitchToCollection("Expenses");
         HashMap<String, Float> data = new HashMap<>();
@@ -152,8 +152,16 @@ public class DBController {
                 data.put(category, new Float(price * amount));
             }
         }
-        System.out.println(data.toString());
-        return data.toString();
+        String result = new String();
+        Object[] keySet = data.keySet().toArray();
+        for (int i = 0; i < data.size(); i++){
+            result += keySet[i];
+            result += '\n';
+            result += data.get(i).toString();
+            result += '\n';
+        }
+
+        return result;
     }
 
     // RID: 7

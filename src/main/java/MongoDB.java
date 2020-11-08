@@ -18,7 +18,7 @@ public class MongoDB {
         DBController.SwitchToDB("MongoDBTutorial");
         DBController.SwitchToCollection("Users");
         try{
-            DBController.PerformLogin(credentials);
+            RequestProcesser.SendRequest_F("generic_request.rin");
         }
         catch(Exception e){
         }
@@ -39,7 +39,6 @@ public class MongoDB {
 
         try{
             //DBController.PostExpense(args_2);
-            DBController.GetExpenceList(null);
 
         }
         catch(Exception excp){
