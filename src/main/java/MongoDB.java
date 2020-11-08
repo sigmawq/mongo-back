@@ -1,13 +1,9 @@
 
-
-import com.mongodb.*;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
-
 import java.net.UnknownHostException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class MongoDB {
@@ -29,17 +25,25 @@ public class MongoDB {
         System.out.println("User: " + DBController.boundUserMongoID);
 
         ArrayList<String> args_2 = new ArrayList<>();
-        args_2.add("The title");
-        args_2.add("Food");
-        args_2.add("Meat");
-        args_2.add("2");
-        args_2.add("I bought some meat");
+        args_2.add("Electronics");
+        args_2.add("Title");
+        args_2.add("Smartphone");
+        args_2.add("2000");
+        args_2.add("1");
+        args_2.add("None");
         args_2.add("09/10/2020 12:10");
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
+        System.out.println("Seconds: " + date.toEpochSecond(ZoneOffset.of("Z")));
+        System.out.println(date.toString());
+
         try{
-            DBController.PostExpense(args_2);
+            //DBController.PostExpense(args_2);
+            DBController.GetExpenceList(null);
+
         }
         catch(Exception excp){
-
+            System.out.println(excp.getCause().toString());
         }
 
     }

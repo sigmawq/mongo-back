@@ -6,6 +6,10 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 
 import com.mongodb.*;
@@ -17,6 +21,8 @@ import com.mongodb.client.model.*;
 import org.bson.Document;
 
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DBController {
     static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
@@ -87,6 +93,13 @@ public class DBController {
         return new RListForm_Output();
     }
 
+    static void CheckIfLogged() throws Exception{
+        if (boundUserMongoID != -1){
+            return;
+        }
+        throw new Exception("Not logged in");
+    }
+
     // RID 0:
     static void PerformLogin(ArrayList<String> Args) throws Exception{
         SwitchToCollection("Users");
@@ -117,13 +130,37 @@ public class DBController {
     }
 
     // RID: 2
-    static void GetExpenceList(ArrayList<String> Args) throws Exception{
+    static String GetExpenceList(ArrayList<String> Args) throws Exception{
+        CheckIfLogged();
+        SwitchToCollection("Expenses");
+        HashMap<String, Float> data = new HashMap<>();
+        Document query = new Document();
+        query.append("user_id", boundUserMongoID);
+        FindIterable<Document> queryResult = currentCollection.find(query);
+        MongoCursor<Document> cursor = queryResult.cursor();
+        while (queryResult.cursor().hasNext()){
+            Document next = cursor.tryNext();
+            if (next == null) break;
+            String category = next.get("category").toString();
+            float price = Float.parseFloat(next.get("price").toString());
+            int amount = Integer.parseInt(next.get("quantity").toString());
+            if (data.containsKey(category)){
+                data.put(category, new Float(data.get(category).floatValue()
+                        + price * amount));
+            }
+            else{
+                data.put(category, new Float(price * amount));
+            }
+        }
+        System.out.println(data.toString());
+        return data.toString();
     }
 
     // RID: 7
     static int PostExpense(ArrayList<String> Args) throws Exception{
+        CheckIfLogged();
         SwitchToCollection("Expenses");
-        if (Args.size() < 6){
+        if (Args.size() < 7){
             throw new Exception("Wrong argument count");
         }
         try{
@@ -137,9 +174,12 @@ public class DBController {
             newExpense.append("category", Args.get(0));
             newExpense.append("title", Args.get(1));
             newExpense.append("name", Args.get(2));
-            newExpense.append("quantity", Args.get(3));
-            newExpense.append("description", Args.get(4));
-            newExpense.append("date", Args.get(5));
+            newExpense.append("price", Float.parseFloat(Args.get(3)));
+            newExpense.append("quantity", Integer.parseInt(Args.get(4)));
+            newExpense.append("description", Args.get(5));
+            DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
+            newExpense.append("date", date.toEpochSecond(ZoneOffset.of("Z")));
             currentCollection.insertOne(newExpense);
             return pickedId;
 
@@ -149,7 +189,6 @@ public class DBController {
             return -1;
         }
     }
-
     // RID: 8
     static int PostIncome(){
         return -1;
