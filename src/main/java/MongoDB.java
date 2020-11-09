@@ -20,7 +20,7 @@ public class MongoDB {
         try{
             RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/login.rin",
                     "/home/sigmawq/IdeaProjects/mongo-back/mongo-back/");
-            RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/generic_request.rin",
+            RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/example_GetExpenseByID.txt",
                     "/home/sigmawq/IdeaProjects/mongo-back/mongo-back/");
         }
         catch(Exception e){

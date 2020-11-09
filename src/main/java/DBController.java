@@ -21,6 +21,7 @@ import com.mongodb.client.model.*;
 import org.bson.Document;
 
 import javax.print.Doc;
+import javax.print.DocFlavor;
 import java.net.UnknownHostException;
 import java.util.logging.Filter;
 
@@ -99,6 +100,12 @@ public class DBController {
                     break;
                 case 2:
                     respose = GetExpenseList(Args);
+                    break;
+                case 3:
+                    respose = GetIncomeList(Args);
+                    break;
+                case 4:
+                    respose = GetExpenseByID(Args);
                     break;
                 case 8:
                     respose = PostIncome(Args);
@@ -269,9 +276,31 @@ public class DBController {
         SwitchToCollection("Expenses");
         long dateLeft = IncapsulateDateToInt64(Args.get(0));
         long dateRight = IncapsulateDateToInt64(Args.get(1));
-        String expenseCategory;
-        Document query = new Document();
-        query.append("user_id", boundUserMongoID);
+        String category = Args.get(2);
+        FindIterable<Document> queryResult = currentCollection.find(
+                Filters.and(
+                        Filters.eq("user_id", boundUserMongoID),
+                        Filters.eq("category", category),
+                        Filters.gte("date", dateLeft),
+                        Filters.lte("date", dateRight)
+                )
+        ).projection(Projections.exclude("user_id"));
+        MongoCursor<Document> cursor = queryResult.cursor();
+
+        String result = "";
+        while (cursor.hasNext()){
+            Document nextArg = new Document(cursor.tryNext());
+            if (nextArg == null) break;
+            result += ParseValuesToString(nextArg);
+        }
+        return result;
+    }
+
+    static String GetIncomeList(ArrayList<String> Args) throws Exception{
+        if (!CheckIfLogged()) return "";
+        SwitchToCollection("Incomes");
+        long dateLeft = IncapsulateDateToInt64(Args.get(0));
+        long dateRight = IncapsulateDateToInt64(Args.get(1));
         FindIterable<Document> queryResult = currentCollection.find(
                 Filters.and(
                         Filters.eq("user_id", boundUserMongoID),
@@ -320,5 +349,25 @@ public class DBController {
             lastRCode = ErrorCodes.GENERIC_ERROR;
             return "-1";
         }
+    }
+
+    // RID: 4
+    static String GetExpenseByID(ArrayList<String> Args) throws Exception{
+        if (!CheckIfLogged()) return "";
+        SwitchToCollection("Expenses");
+        FindIterable<Document> queried = currentCollection.find(
+                Filters.and(
+                        Filters.eq("user_id", boundUserMongoID),
+                        Filters.eq("_id", Integer.parseInt(Args.get(0)))
+                )
+        ).projection(Projections.exclude("user_id"));
+        MongoCursor<Document> cursor = queried.cursor();
+        if (cursor.hasNext()){
+            String result = "";
+            result += ParseValuesToString(cursor.next());
+            return result;
+        }
+        lastRCode = ErrorCodes.ELEMENT_NOT_FOUND;
+        return "";
     }
 }
