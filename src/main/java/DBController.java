@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +30,22 @@ public class DBController {
     public static MongoDatabase database;
     public static MongoCollection currentCollection;
     public static HashMap<Integer, String> RID2FunctionMap;
+
+    // Convert String of type "yyyy-MM-dd HH:mm" to Int64 Epoch time
+    static long IncapsulateDateToInt64(String time){
+        //DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm::ss");
+        LocalDateTime date = LocalDateTime.parse(time, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return date.toEpochSecond(ZoneOffset.of("Z"));
+    }
+
+    // Convert Int64 Epoch time String of type "yyyy-MM-dd HH:mm"
+    static String DecapsulteDateFromInt64(long epochTime){
+        LocalDateTime date =
+                LocalDateTime.ofInstant(Instant.ofEpochSecond(epochTime),
+                        TimeZone.getTimeZone("Z").toZoneId());
+        date.toString();
+        return date.toString();
+    }
 
     static String ProcessRequest(ArrayList<String> Args){
         String respose = "";
@@ -66,10 +83,12 @@ public class DBController {
         currentCollection = currentCollection = database.getCollection(CollectionName);
     }
 
-    static void CheckIfLogged() throws Exception{
+    static boolean CheckIfLogged() throws Exception{
         if (boundUserMongoID == -1){
-            throw new Exception("Not logged in");
+            lastRCode = ErrorCodes.NOT_LOGGED_IN;
+            return false;
         }
+        return true;
     }
 
     // Check ian object with value "val" of key "key" exists in currentCollection
@@ -134,7 +153,7 @@ public class DBController {
 
     // RID: 2
     static String GetSumOfExpenses(ArrayList<String> Args) throws Exception{
-        CheckIfLogged();
+        if (!CheckIfLogged()) return "";
         SwitchToCollection("Expenses");
         HashMap<String, Float> data = new HashMap<>();
         Document query = new Document();
@@ -160,7 +179,7 @@ public class DBController {
         for (int i = 0; i < data.size(); i++){
             result += keySet[i];
             result += '\n';
-            result += data.get(i).toString();
+            result += data.get(keySet[i]).toString();
             result += '\n';
         }
 
@@ -169,7 +188,7 @@ public class DBController {
 
     // RID: 7
     static String PostExpense(ArrayList<String> Args) throws Exception{
-        CheckIfLogged();
+        if (!CheckIfLogged()) return "";
         SwitchToCollection("Expenses");
         if (Args.size() < 7){
             lastRCode = ErrorCodes.WRONG_ARGUMENT_COUNT;

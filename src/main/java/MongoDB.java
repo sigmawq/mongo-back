@@ -18,6 +18,8 @@ public class MongoDB {
         DBController.SwitchToDB("MongoDBTutorial");
         DBController.SwitchToCollection("Users");
         try{
+            RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/login.rin",
+                    "/home/sigmawq/IdeaProjects/mongo-back/mongo-back/");
             RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/generic_request.rin",
                     "/home/sigmawq/IdeaProjects/mongo-back/mongo-back/");
         }
@@ -35,11 +37,26 @@ public class MongoDB {
         args_2.add("09/10/2020 12:10");
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
-        System.out.println("Seconds: " + date.toEpochSecond(ZoneOffset.of("Z")));
-        System.out.println(date.toString());
+
+        ArrayList<String> args_3 = new ArrayList<>();
+        args_2.add("Electronics");
+        args_2.add("Title");
+        args_2.add("Smartphone");
+        args_2.add("2000");
+        args_2.add("1");
+        args_2.add("None");
+        args_2.add("09/10/2020 12:10");
+        //DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        //LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
+
+        //System.out.println("Seconds: " + date.toEpochSecond(ZoneOffset.of("Z")));
+        //System.out.println(date.toString());
 
         try{
             //DBController.PostExpense(args_2);
+            long incapsulated = DBController.IncapsulateDateToInt64("2020-10-10T23:00:00");
+            String decapsulated = DBController.DecapsulteDateFromInt64(incapsulated);
+            System.out.println("1");
 
         }
         catch(Exception excp){
