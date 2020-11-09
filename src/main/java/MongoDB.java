@@ -18,7 +18,8 @@ public class MongoDB {
         DBController.SwitchToDB("MongoDBTutorial");
         DBController.SwitchToCollection("Users");
         try{
-            RequestProcesser.SendRequest_F("generic_request.rin");
+            RequestProcesser.SendRequest_F("/home/sigmawq/IdeaProjects/mongo-back/mongo-back/generic_request.rin",
+                    "/home/sigmawq/IdeaProjects/mongo-back/mongo-back/");
         }
         catch(Exception e){
         }

@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 
 public class DBController {
     static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
+    static ErrorCodes lastRCode = ErrorCodes.NO_ERROR;
 
     public static MongoClient mongoClient;
     public static MongoDatabase database;
@@ -113,10 +114,12 @@ public class DBController {
             userToFind.append("password", Args.get(1));
             FindIterable<Document> qresult = currentCollection.find(userToFind);
             if (!(qresult.cursor().hasNext())){
-                return "0";
+                lastRCode = ErrorCodes.LOGIN_FAILED_WRONG_CREDENTIALS;
+                return "";
             }
             boundUserMongoID = Integer.parseInt(qresult.cursor().next().get("_id").toString());
-            return "1";
+            lastRCode = ErrorCodes.NO_ERROR;
+            return "";
         }
         catch (Exception excp){
             System.out.println(excp.getCause());
@@ -165,11 +168,11 @@ public class DBController {
     }
 
     // RID: 7
-    static int PostExpense(ArrayList<String> Args) throws Exception{
+    static String PostExpense(ArrayList<String> Args) throws Exception{
         CheckIfLogged();
         SwitchToCollection("Expenses");
         if (Args.size() < 7){
-            throw new Exception("Wrong argument count");
+            lastRCode = ErrorCodes.WRONG_ARGUMENT_COUNT;
         }
         try{
             Document newExpense = new Document();
@@ -189,12 +192,13 @@ public class DBController {
             LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
             newExpense.append("date", date.toEpochSecond(ZoneOffset.of("Z")));
             currentCollection.insertOne(newExpense);
-            return pickedId;
+            return Integer.toString(pickedId);
 
         }
         catch (Exception excp){
             System.out.println(excp.getCause());
-            return -1;
+            lastRCode = ErrorCodes.GENERIC_ERROR;
+            return "";
         }
     }
     // RID: 8
