@@ -20,7 +20,9 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import org.bson.Document;
 
+import javax.print.Doc;
 import java.net.UnknownHostException;
+import java.util.logging.Filter;
 
 public class DBController {
     static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
@@ -45,6 +47,18 @@ public class DBController {
                         TimeZone.getTimeZone("Z").toZoneId());
         date.toString();
         return date.toString();
+    }
+
+    // This fuction accepts a document and parses all the values
+    // to String, where each argument lays on separate line
+    static String ParseValuesToString(Document doc){
+        Object[] keys = doc.keySet().toArray();
+        String result = "";
+        for (int i = 0; i < keys.length; i++){
+            result += doc.get(keys[i]).toString();
+            result += '\n';
+        }
+        return result;
     }
 
     // dateA > dateB?
@@ -82,6 +96,9 @@ public class DBController {
                     break;
                 case 1:
                     respose = GetSumOfExpenses(Args);
+                    break;
+                case 2:
+                    respose = GetExpenseList(Args);
                     break;
                 case 8:
                     respose = PostIncome(Args);
@@ -178,7 +195,7 @@ public class DBController {
         boundUserMongoID = -1;
     }
 
-    // RID: 2
+    // RID: 1
     static String GetSumOfExpenses(ArrayList<String> Args) throws Exception{
         if (!CheckIfLogged()) return "";
         SwitchToCollection("Expenses");
@@ -209,7 +226,6 @@ public class DBController {
             result += data.get(keySet[i]).toString();
             result += '\n';
         }
-
         return result;
     }
 
@@ -246,6 +262,34 @@ public class DBController {
             return "-1";
         }
     }
+
+    // RID: 2
+    static String GetExpenseList(ArrayList<String> Args) throws Exception{
+        if (!CheckIfLogged()) return "";
+        SwitchToCollection("Expenses");
+        long dateLeft = IncapsulateDateToInt64(Args.get(0));
+        long dateRight = IncapsulateDateToInt64(Args.get(1));
+        String expenseCategory;
+        Document query = new Document();
+        query.append("user_id", boundUserMongoID);
+        FindIterable<Document> queryResult = currentCollection.find(
+                Filters.and(
+                        Filters.eq("user_id", boundUserMongoID),
+                        Filters.gte("date", dateLeft),
+                        Filters.lte("date", dateRight)
+                )
+        ).projection(Projections.exclude("user_id"));
+        MongoCursor<Document> cursor = queryResult.cursor();
+
+        String result = "";
+        while (cursor.hasNext()){
+            Document nextArg = new Document(cursor.tryNext());
+            if (nextArg == null) break;
+            result += ParseValuesToString(nextArg);
+        }
+        return result;
+    }
+
     // RID: 8
     static String PostIncome(ArrayList<String> Args) throws Exception{
         if (!CheckIfLogged()) return "";
