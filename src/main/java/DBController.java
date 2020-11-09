@@ -47,6 +47,30 @@ public class DBController {
         return date.toString();
     }
 
+    // dateA > dateB?
+    static boolean DateCmp_Greater(String dateA, String dateB){
+        long epochA = IncapsulateDateToInt64(dateA);
+        long epochB = IncapsulateDateToInt64(dateB);
+        if (epochA > epochB) return true;
+        return false;
+    }
+
+    // dateA >= dateB?
+    static boolean DateCmp_GreaterEqual(String dateA, String dateB){
+        long epochA = IncapsulateDateToInt64(dateA);
+        long epochB = IncapsulateDateToInt64(dateB);
+        if (epochA >= epochB) return true;
+        return false;
+    }
+
+    // dateA == dateB?
+    static boolean DateCmp_Equals(String dateA, String dateB){
+        long epochA = IncapsulateDateToInt64(dateA);
+        long epochB = IncapsulateDateToInt64(dateB);
+        if (epochA == epochB) return true;
+        return false;
+    }
+
     static String ProcessRequest(ArrayList<String> Args){
         String respose = "";
         try{
@@ -59,8 +83,11 @@ public class DBController {
                 case 1:
                     respose = GetSumOfExpenses(Args);
                     break;
+                case 8:
+                    respose = PostIncome(Args);
+                    break;
                 default:
-                    throw new Exception("RID not found");
+                    lastRCode = ErrorCodes.RID_NOT_FOUND;
             }
             return respose;
         }
@@ -188,10 +215,11 @@ public class DBController {
 
     // RID: 7
     static String PostExpense(ArrayList<String> Args) throws Exception{
-        if (!CheckIfLogged()) return "";
+        if (!CheckIfLogged()) return "-1";
         SwitchToCollection("Expenses");
         if (Args.size() < 7){
             lastRCode = ErrorCodes.WRONG_ARGUMENT_COUNT;
+            return "-1";
         }
         try{
             Document newExpense = new Document();
@@ -207,9 +235,7 @@ public class DBController {
             newExpense.append("price", Float.parseFloat(Args.get(3)));
             newExpense.append("quantity", Integer.parseInt(Args.get(4)));
             newExpense.append("description", Args.get(5));
-            DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-            LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
-            newExpense.append("date", date.toEpochSecond(ZoneOffset.of("Z")));
+            newExpense.append("date", IncapsulateDateToInt64(Args.get(6)));
             currentCollection.insertOne(newExpense);
             return Integer.toString(pickedId);
 
@@ -217,11 +243,38 @@ public class DBController {
         catch (Exception excp){
             System.out.println(excp.getCause());
             lastRCode = ErrorCodes.GENERIC_ERROR;
-            return "";
+            return "-1";
         }
     }
     // RID: 8
-    static int PostIncome(){
-        return -1;
+    static String PostIncome(ArrayList<String> Args) throws Exception{
+        if (!CheckIfLogged()) return "";
+        SwitchToCollection("Incomes");
+        if (Args.size() < 6){
+            lastRCode = ErrorCodes.WRONG_ARGUMENT_COUNT;
+            return "-1";
+        }
+        try{
+            Document newExpense = new Document();
+            int pickedId = PickID();
+            if (pickedId == -1){
+                throw new Exception("No ID available");
+            }
+            newExpense.append("_id", pickedId);
+            newExpense.append("user_id", boundUserMongoID);
+            newExpense.append("title", Args.get(0));
+            newExpense.append("name", Args.get(1));
+            newExpense.append("price", Float.parseFloat(Args.get(2)));
+            newExpense.append("quantity", Integer.parseInt(Args.get(3)));
+            newExpense.append("description", Args.get(4));
+            newExpense.append("date", IncapsulateDateToInt64(Args.get(5)));
+            currentCollection.insertOne(newExpense);
+            return Integer.toString(pickedId);
+        }
+        catch (Exception excp){
+            System.out.println(excp.getCause());
+            lastRCode = ErrorCodes.GENERIC_ERROR;
+            return "-1";
+        }
     }
 }

@@ -39,13 +39,13 @@ public class MongoDB {
         LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
 
         ArrayList<String> args_3 = new ArrayList<>();
-        args_2.add("Electronics");
-        args_2.add("Title");
-        args_2.add("Smartphone");
-        args_2.add("2000");
-        args_2.add("1");
-        args_2.add("None");
-        args_2.add("09/10/2020 12:10");
+        args_3.add("Food");
+        args_3.add("Title");
+        args_3.add("Meat");
+        args_3.add("5.5");
+        args_3.add("1");
+        args_3.add("None");
+        args_3.add("2020-10-12T12:10:00");
         //DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         //LocalDateTime date = LocalDateTime.parse("2020-10-10 23:00", format);
 
@@ -53,7 +53,7 @@ public class MongoDB {
         //System.out.println(date.toString());
 
         try{
-            //DBController.PostExpense(args_2);
+            //DBController.PostExpense(args_3);
             long incapsulated = DBController.IncapsulateDateToInt64("2020-10-10T23:00:00");
             String decapsulated = DBController.DecapsulteDateFromInt64(incapsulated);
             System.out.println("1");
