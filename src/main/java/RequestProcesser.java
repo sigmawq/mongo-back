@@ -1,3 +1,5 @@
+import com.mongodb.DBCollection;
+
 import java.io.*;
 import java.util.ArrayList;
 
@@ -39,6 +41,10 @@ public class RequestProcesser {
 
             // Write return set of values
             WriteLine(writer, result);
+
+            // Neutralize error code
+            DBController.NeutralizeErrorCode();
+
             writer.close();
         }
         catch (Exception excp){

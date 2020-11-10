@@ -110,6 +110,11 @@ public class DBController {
                 case 8:
                     respose = PostIncome(Args);
                     break;
+                case 10:
+                    respose = CreateUser(Args);
+                    break;
+                case 11:
+                    respose = DeleteUser(Args);
                 default:
                     lastRCode = ErrorCodes.RID_NOT_FOUND;
             }
@@ -119,6 +124,10 @@ public class DBController {
             System.out.println(excp.getCause());
         }
         return respose;
+    }
+
+    public static void NeutralizeErrorCode(){
+        lastRCode = ErrorCodes.NO_ERROR;
     }
 
     static void ConnectToMongoDB(String URI){
@@ -368,6 +377,41 @@ public class DBController {
             return result;
         }
         lastRCode = ErrorCodes.ELEMENT_NOT_FOUND;
+        return "";
+    }
+
+    // RID: 10
+    static String CreateUser(ArrayList<String> Args){
+        if (Args.size() < 3){
+            lastRCode = ErrorCodes.WRONG_ARGUMENT_COUNT;
+            return "";
+        }
+        Document newUser = new Document();
+        SwitchToCollection("Users");
+        int pickedID = PickID();
+        if (pickedID == -1){
+            lastRCode = ErrorCodes.GENERIC_ERROR;
+        }
+        newUser.append("_id", PickID());
+        newUser.append("username", Args.get(0));
+        newUser.append("password", Args.get(1));
+        newUser.append("family_id", Args.get(2));
+        return "";
+    }
+
+    // RID: 11
+    static String DeleteUser(ArrayList<String> Args) throws Exception{
+        if (!CheckIfLogged()) return "";
+        SwitchToCollection("Users");
+        FindIterable<Document> query = currentCollection.find(
+                Filters.eq("_id", boundUserMongoID)
+        );
+        MongoCursor<Document> cursor = query.cursor();
+        if (!cursor.hasNext()){
+            lastRCode = ErrorCodes.ELEMENT_NOT_FOUND;
+            return "";
+        }
+        currentCollection.deleteOne(cursor.next());
         return "";
     }
 }
