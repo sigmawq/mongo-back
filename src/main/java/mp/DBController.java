@@ -1,11 +1,9 @@
+package mp;
+
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -14,16 +12,9 @@ import java.util.*;
 
 import com.mongodb.*;
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import org.bson.Document;
-
-import javax.print.Doc;
-import javax.print.DocFlavor;
-import java.net.UnknownHostException;
-import java.util.logging.Filter;
 
 public class DBController {
     static int boundUserMongoID = -1; // Bound user, if no user bound => this field should be ""
